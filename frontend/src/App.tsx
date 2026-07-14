@@ -1,0 +1,63 @@
+import { useState } from 'react';
+import './index.css';
+
+function App() {
+  const [longUrl, setLongUrl] = useState('');
+  const [shortUrl, setShortUrl] = useState('');
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!longUrl) return;
+    
+    // Simulating backend generation
+    const fakeToken = Math.random().toString(36).substring(2, 8);
+    setShortUrl(`http://localhost:3000/${fakeToken}`);
+    setIsCopied(false);
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(shortUrl);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  return (
+    <div className="app-container">
+      <h1 className="title">LinkMe</h1>
+      <p className="subtitle">Shorten your massive links with style.</p>
+
+      <div className="glass-card">
+        <form onSubmit={handleSubmit} className="input-group">
+          <input
+            type="url"
+            className="input-field"
+            placeholder="Paste your long URL here..."
+            value={longUrl}
+            onChange={(e) => setLongUrl(e.target.value)}
+            required
+          />
+          <button type="submit" className="btn">
+            Shorten URL
+          </button>
+        </form>
+
+        {shortUrl && (
+          <div className="result-container">
+            <div className="result-label">Your new Short Link</div>
+            <div className="result-box">
+              <a href={shortUrl} target="_blank" rel="noopener noreferrer" className="short-url">
+                {shortUrl}
+              </a>
+              <button type="button" onClick={copyToClipboard} className="copy-btn">
+                {isCopied ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default App;
