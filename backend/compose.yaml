@@ -13,17 +13,32 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7.4-alpine
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
+
   api:
     build:
-        context: .
-        dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile
     container_name: url_shortner
     environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       DATABASE_URL: postgresql://aryan:${POSTGRES_PASSWORD}@db:5432/url_shortner
       PORT: 3000
     ports: 
        - "3000:3000"
     depends_on:
       - db
+      - redis
+
 volumes:
   postgres_data:
+  redis_data:
+    driver: local

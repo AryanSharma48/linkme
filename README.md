@@ -7,14 +7,14 @@ NanoLink is a high-performance, fault-tolerant URL shortening service designed t
 - **Backend (API):** Node.js (v22), Fastify, TypeScript
 - **Frontend (Client):** React, TypeScript, Vite
 - **Database:** PostgreSQL (with `pg` driver)
-- **Infrastructure:** Docker, Docker Compose
-- **Future Additions:** Redis, Kafka, Prometheus, Grafana
+- **Infrastructure:** Docker, Docker Compose, Redis
+- **Future Additions:** Kafka, Prometheus, Grafana
 
 ## The Architecture & Vision
 
 NanoLink is separated into two primary services:
 
-1. **The Backend API:** A blazing fast Fastify server compiled natively to JavaScript. It features an **auto-healing collision mechanism** utilizing a 7-character Base62 encoding system (via `nanoid`). It is completely protected against SQL injections via parameterized queries and handles graceful fallback for 404/400 errors.
+1. **The Backend API:** A blazing fast Fastify server compiled natively to JavaScript. It features an **auto-healing collision mechanism** utilizing a 7-character Base62 encoding system (via `nanoid`). It is protected against DDoS attacks and database spam via a strict **Rate Limiter**, and implements the **Cache-Aside pattern** using an in-memory **Redis** cache for sub-millisecond redirect latency. It is completely protected against SQL injections via parameterized queries and handles graceful fallback for 404/400 errors.
 2. **The Frontend Client:** A lightning-fast React application built with Vite for optimal Hot Module Replacement and minified production bundles.
 
 Both services and the database are fully containerized using Docker, communicating over an isolated virtual network.
@@ -25,7 +25,7 @@ We are currently building towards a "Twitter/X scale" system. Here is the roadma
 - [x] **Base62 Encoding:** Cryptographically secure 7-character generation using `nanoid`.
 - [x] **Collision Auto-Healing:** Database constraint retry loops to prevent crashes on duplicate keys.
 - [x] **Containerization:** Fully Dockerized backend environment with isolated network topologies.
-- [ ] **The Caching Layer:** Integrating **Redis** to bypass PostgreSQL reads and serve viral links directly from memory.
+- [x] **The Caching Layer:** Integrating **Redis** to bypass PostgreSQL reads and serve viral links directly from memory.
 - [ ] **Event-Driven Analytics:** Integrating **Kafka/RabbitMQ** to asynchronously log user clicks without blocking the redirect response time.
 - [x] **Security & Protection:** Implementing strict **Rate Limiting** to prevent DDoS and database spam.
 - [ ] **Observability:** Adding **Prometheus & Grafana** to visualize RPS, latency, and database health in real-time.

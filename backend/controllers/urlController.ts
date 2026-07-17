@@ -3,6 +3,7 @@ import {FastifyRequest, FastifyReply} from 'fastify'
 import {createTable, getAllRows, getRedirectId, insertIntoDb } from '../model/db'
 import { randomUrl } from "../utils/crypto"
 import { isValidUrl } from "../utils/urlCheck"
+import client from "../model/redis"
 
 //shows all rows from db
 export async function allRows(req : FastifyRequest, reply: FastifyReply) : Promise<void> {
@@ -46,12 +47,25 @@ export async function addToDb(req: FastifyRequest, reply: FastifyReply) : Promis
     } 
 }
 
+
 export async function redirectId(req: FastifyRequest<{ Params: {shortId: string}}>, reply: FastifyReply){
     const shortId = req.params.shortId as string;
-    const redirect = await getRedirectId(shortId);
-    if (redirect)
+    let redirect = await client.get(shortId);
+    if(redirect){
         reply.redirect(redirect);
-    else {   
-        reply.status(404).send("URL not found!");
     }
+    else{
+        redirect = await getRedirectId(shortId);
+        if (redirect){
+            await client.setEx(shortId, 86400, redirect);
+            return reply.redirect(redirect);
+            
+        }
+        else {   
+            reply.status(404).send("URL not found!");
+        }
+
+    }
+    
+    
 }
