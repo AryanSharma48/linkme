@@ -1,12 +1,13 @@
 import { Pool } from 'pg';
+import { config } from '../utils/config';
 
-const pool = new Pool ({
-    connectionString: process.env.DATABASE_URL
+export const pool = new Pool ({
+    connectionString: config.DATABASE_URL
 })
 
 //Shows the content in db
-export async function getAllRows() : Promise<any> {
-    return await pool.query('SELECT * FROM urls');
+export async function getAllRows(limit: number = 50, offset: number = 0) : Promise<any> {
+    return await pool.query('SELECT * FROM urls ORDER BY id DESC LIMIT $1 OFFSET $2', [limit, offset]);
 }
 
 export async function insertIntoDb(url : string, token : string) : Promise<void> {
@@ -22,9 +23,3 @@ export async function getRedirectId(shortId : string) : Promise<string | null> {
     else
         return null;
 }
-
-//Creates tables if not already
-export function createTable() : void {
-    pool.query('CREATE TABLE IF NOT EXISTS urls ( id SERIAL PRIMARY KEY, short_code TEXT UNIQUE, long_url TEXT )').then(() => console.log("Table created!"));
-}
-
