@@ -1,5 +1,6 @@
 import Fastify from 'fastify'; 
 import cors from '@fastify/cors'
+import fastifyRateLimit from '@fastify/rate-limit';
 
 import {createTable } from './model/db'
 import urlRoutes from './routes/urlRoutes'; 
@@ -9,6 +10,9 @@ const fastify = Fastify({
 });
 
 fastify.register(cors);
+fastify.register(fastifyRateLimit, {
+    global: false,
+});
 fastify.register(urlRoutes);
 
 

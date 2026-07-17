@@ -27,7 +27,7 @@ We are currently building towards a "Twitter/X scale" system. Here is the roadma
 - [x] **Containerization:** Fully Dockerized backend environment with isolated network topologies.
 - [ ] **The Caching Layer:** Integrating **Redis** to bypass PostgreSQL reads and serve viral links directly from memory.
 - [ ] **Event-Driven Analytics:** Integrating **Kafka/RabbitMQ** to asynchronously log user clicks without blocking the redirect response time.
-- [ ] **Security & Protection:** Implementing strict **Rate Limiting** to prevent DDoS and database spam.
+- [x] **Security & Protection:** Implementing strict **Rate Limiting** to prevent DDoS and database spam.
 - [ ] **Observability:** Adding **Prometheus & Grafana** to visualize RPS, latency, and database health in real-time.
 
 ---
