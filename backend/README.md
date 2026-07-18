@@ -1,48 +1,52 @@
 # NanoLink - Backend API
 
-The backend for NanoLink is engineered for speed and resilience. It is built using **Node.js (v22)** and **Fastify**, a framework designed for extremely high throughput.
+This directory contains the core infrastructure and application code for the NanoLink backend.
 
-## Core Features
-- **TypeScript:** Fully strongly typed, compiled down to optimized JavaScript for production via `tsc`.
-- **PostgreSQL:** Uses parameterized queries to prevent SQL injection.
-- **Docker Compose:** The entire backend stack (API + Database) can be spun up with a single command.
-- **Robust Error Handling:** Features a self-healing retry loop to mathematically guarantee no unhandled URL collisions (Unique Constraint Violations).
+## Microservice Architecture
+The backend is split into two independent services that communicate via Apache Kafka:
 
-## 🚀 Running the Backend
+1. **API Server (`index.ts` & `controllers/`)**: A Fastify server that handles incoming HTTP requests. It resolves short URLs from Redis (cache-aside) and publishes click events to Kafka without blocking the HTTP response.
+2. **Analytics Worker (`analytics/analyticsWorker.ts`)**: A headless Kafka consumer that runs in the background, batches incoming click events, and performs bulk inserts into PostgreSQL.
 
-### The Docker Way (Production Mode)
-The easiest way to run the backend is using Docker Compose. This will spin up the PostgreSQL database, automatically inject the correct environment variables over an isolated virtual network, and start the Fastify API.
+## API Endpoints
 
-```bash
-cd backend
-docker compose up --build
-```
-The API will be available at `http://localhost:3000`.
+### 1. Health Check
+Checks if the server is up and running.
+- **URL**: `/`
+- **Method**: `GET`
+- **Response**: `{"Status": "OK"}`
 
-### The Local Way (Development Mode)
-If you want to run the code locally for fast iteration:
+### 2. Shorten URL
+Accepts a long URL, validates it using Zod, and generates a short link using Base62.
+- **URL**: `/url`
+- **Method**: `POST`
+- **Body**: `{"url": "https://www.google.com"}`
+- **Response**: `{"Shortened URL": "http://localhost:3000/a1B2c3D"}`
 
-1. Ensure your `.env` file exists and contains your local `DATABASE_URL`:
-   ```env
-   DATABASE_URL=postgresql://user:password@localhost:5432/url_shortner
-   ```
-2. Start your Postgres instance manually or via Docker.
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-4. Run the development server (transpiles on the fly):
-   ```bash
-   npm run dev
-   ```
+### 3. Redirect (The Core Engine)
+Redirects the user to the original website. 
+*Behind the scenes: Hits Redis first. If Cache Miss, falls back to Postgres. Publishes a Fire-And-Forget event to Kafka.*
+- **URL**: `/:shortId`
+- **Method**: `GET`
+- **Behavior**: HTTP 302 Redirect to the original `long_url`. Returns 404 if not found.
 
-## 🏗️ Building for Production
-To compile the TypeScript code into optimized JavaScript:
-```bash
-npm run build
-```
-This will output the code to the `/dist` folder. You can then run it with:
-```bash
-npm start
-```
-*(Note: Ensure you are using Node 20.6+ as the start script relies on the `--env-file` flag!)*
+### 4. View All URLs
+Returns all saved URLs in the database with pagination.
+- **URL**: `/all`
+- **Method**: `GET`
+- **Response**: `{"RESULT": [{"id": 1, "short_code": "a1B2c3D", "long_url": "https://... "}]}`
+
+### 5. View Analytics Dashboard
+Returns an aggregated list of all URLs joined with their total click counts.
+- **URL**: `/analytics`
+- **Method**: `GET`
+- **Response**: `{"results": [{"short_code": "a1B2c3D", "total_clicks": 42}]}`
+
+## Docker Infrastructure
+
+The backend is fully containerized. The `compose.yaml` file defines 5 distinct services:
+1. `url_shortner`: The main Fastify API.
+2. `analytics_worker`: The headless background worker.
+3. `postgres_db`: The relational database.
+4. `redis_cache`: The in-memory cache for ultra-fast reads.
+5. `kafka_kraft`: The message broker running in KRaft mode (no Zookeeper).
